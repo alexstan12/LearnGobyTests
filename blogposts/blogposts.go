@@ -1,15 +1,10 @@
 package blogposts
 
 import (
-	"io"
 	"io/fs"
-	"strings"
 )
 
-type Post struct {
-	Title, Description, Body string
-	Tags []string
-}
+
 
 func PostFromFS(filesystem fs.FS) ([]Post, error) {
 	dir, err := fs.ReadDir(filesystem, ".")
@@ -18,18 +13,24 @@ func PostFromFS(filesystem fs.FS) ([]Post, error) {
 	}
 	var posts []Post
 	for _,f := range dir {
-		posts = append(posts, makePostFromFile(filesystem, f))
+		post, err := getPost(filesystem, f.Name())
+		if err != nil {
+			return nil, err //todo: needs clarification, should we totally fail if one file fails? or just ignore?
+		}
+		posts = append(posts, post)
 	}
 	return posts, nil
 }
 
-func makePostFromFile(filesystem fs.FS, f fs.DirEntry) Post {
-	blogFile, _ := filesystem.Open(f.Name())
-	fileContents, _ := io.ReadAll(blogFile)
-	title := strings.TrimPrefix(string(fileContents),  "Title: ")
-	return Post{
-		Title: title,
+func getPost(filesystem fs.FS, fileName string) (Post, error) {
+	blogFile, err := filesystem.Open(fileName)
+	if err != nil {
+		return Post{}, err
 	}
+	defer blogFile.Close()
+	return newPost(blogFile)
 }
+
+
 
 

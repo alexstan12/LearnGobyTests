@@ -4,6 +4,7 @@ import (
 	"errors"
 	blogposts "github.com/alexstan12/LearnGobyTests/blogposts"
 	"io/fs"
+	"reflect"
 	"testing"
 	"testing/fstest"
 )
@@ -19,8 +20,8 @@ func (s StubFailingFS) Open(name string) (fs.File, error){
 func TestBlogPosts(t *testing.T) {
 	//Given
 	fs := fstest.MapFS{
-		"hello-world.md":  {Data: []byte("Title: Hello, TDD world!")},
-		"hello-twitch.md": {Data: []byte("Title: Hello, twitchy world")},
+		"hello-world.md":  {Data: []byte("Title: Post 1")},
+		"hello-twitch.md": {Data: []byte("Title: Post 2")},
 	}
 	//When
 	posts, err := blogposts.PostFromFS(fs)
@@ -34,8 +35,8 @@ func TestBlogPosts(t *testing.T) {
 		t.Errorf("expected %d posts, got %d posts", len(fs), len(posts))
 	}
 
-	expectedPost := blogposts.Post{Title: "Hello, TDD world!"}
-	if posts[0] != expectedPost {
+	expectedPost := blogposts.Post{Title: "Post 1"}
+	if reflect.DeepEqual(expectedPost, posts[0]) {
 		t.Errorf("got %v, want %v", posts[0], expectedPost)
 	}
 }
