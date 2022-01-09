@@ -10,18 +10,24 @@ import (
 )
 
 type StubFailingFS struct {
-
 }
 
-func (s StubFailingFS) Open(name string) (fs.File, error){
+func (s StubFailingFS) Open(name string) (fs.File, error) {
 	return nil, errors.New("oh no I'm always failing")
 }
 
 func TestBlogPosts(t *testing.T) {
+	const (
+		firstBody = `Title: Post 1
+Description: Description 1`
+		secondBody = `Title: Post 2
+Description: Description 2`
+	)
+
 	//Given
 	fs := fstest.MapFS{
-		"hello-world.md":  {Data: []byte("Title: Post 1")},
-		"hello-twitch.md": {Data: []byte("Title: Post 2")},
+		"hello-world.md":  {Data: []byte(firstBody)},
+		"hello-twitch.md": {Data: []byte(secondBody)},
 	}
 	//When
 	posts, err := blogposts.PostFromFS(fs)
@@ -35,12 +41,13 @@ func TestBlogPosts(t *testing.T) {
 		t.Errorf("expected %d posts, got %d posts", len(fs), len(posts))
 	}
 
-	expectedPost := blogposts.Post{Title: "Post 1"}
-	assertPost(t, expectedPost, posts[0])
+	expectedPost := blogposts.Post{Title: "Post 1", Description: "Description 1"}
+	assertPost(t, posts[0], expectedPost)
 }
 
 func assertPost(t *testing.T, got, want blogposts.Post) {
-	if reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
