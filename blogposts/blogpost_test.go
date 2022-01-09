@@ -36,7 +36,11 @@ func TestBlogPosts(t *testing.T) {
 	}
 
 	expectedPost := blogposts.Post{Title: "Post 1"}
-	if reflect.DeepEqual(expectedPost, posts[0]) {
-		t.Errorf("got %v, want %v", posts[0], expectedPost)
+	assertPost(t, expectedPost, posts[0])
+}
+
+func assertPost(t *testing.T, got, want blogposts.Post) {
+	if reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
