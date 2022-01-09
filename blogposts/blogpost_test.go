@@ -19,19 +19,21 @@ func (s StubFailingFS) Open(name string) (fs.File, error) {
 func TestBlogPosts(t *testing.T) {
 	const (
 		firstBody = `Title: Post 1
-Description: Description 1`
+Description: Description 1
+Tags: tdd, go`
 		secondBody = `Title: Post 2
-Description: Description 2`
+Description: Description 2
+Tags: rust, borrow-checker`
 	)
 
 	//Given
 	fs := fstest.MapFS{
 		"hello-world.md":  {Data: []byte(firstBody)},
-		"hello-twitch.md": {Data: []byte(secondBody)},
+		"hello world2.md": {Data: []byte(secondBody)},
 	}
 	//When
 	posts, err := blogposts.PostFromFS(fs)
-
+	t.Logf("the posts are %s", posts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,8 +43,8 @@ Description: Description 2`
 		t.Errorf("expected %d posts, got %d posts", len(fs), len(posts))
 	}
 
-	expectedPost := blogposts.Post{Title: "Post 1", Description: "Description 1"}
-	assertPost(t, posts[0], expectedPost)
+	expectedPost := blogposts.Post{Title: "Post 1", Description: "Description 1", Tags:[]string{"tdd", "go"}}
+	assertPost(t, posts[1], expectedPost)
 }
 
 func assertPost(t *testing.T, got, want blogposts.Post) {
