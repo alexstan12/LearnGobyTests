@@ -1,0 +1,4 @@
+github.com/matryer/is v1.4.0 h1:sosSmIWwkYITGrxZ25ULNDeKiMNzFSr4V/eqBQP0PeE=
+github.com/matryer/is v1.4.0/go.mod h1:8I/i5uYgLzgsgEloJE1U6xx5HkBQpAZvepWuujKwMRU=
+github.com/quii/fstest-spike v0.0.0-20210603161226-22f21fe78577 h1:4Z4pizzdy5DCQxwzmNW5Mmj4RzzLqFSgZ3EC8wh3uxY=
+github.com/quii/fstest-spike v0.0.0-20210603161226-22f21fe78577/go.mod h1:O3ItJhH9IdRc5lBUMbbD/5Avo1LIv7tHUYE4PgGGIWc=
