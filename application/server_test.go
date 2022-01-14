@@ -48,6 +48,20 @@ func TestGETPlayers(t *testing.T) {
 
 		assertResponseBody(t, got, want)
 	})
+
+	t.Run("returns 404 on missing players", func(t *testing.T){
+		request := newGetScoreRequest("Aurica")
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		got := response.Code
+		want := http.StatusNotFound
+		t.Logf("score is %s", response.Body.String())
+		if got != want {
+			t.Errorf("got status %d, want %d", got, want)
+		}
+	})
 }
 
 func assertResponseBody(t *testing.T, got string, want string) {
