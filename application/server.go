@@ -36,7 +36,7 @@ func (p *PlayerServer) showScore(writer http.ResponseWriter, player string) {
 	fmt.Fprint(writer, score)
 }
 
-func (p *PlayerServer) processWin(writer http.ResponseWriter,player string) {
+func (p *PlayerServer) processWin(writer http.ResponseWriter, player string) {
 	writer.WriteHeader(http.StatusAccepted)
 	p.store.RecordWin(player)
 	return

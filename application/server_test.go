@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -20,18 +21,68 @@ func (s *StubPlayerStore) RecordWin(name string) {
 	s.winCalls = append(s.winCalls, name)
 }
 
-func TestRecordingAndRetrievingPostgres(t *testing.T){
-	store := &PostgresPlayerStore{}
+func TestRecordingAndRetrievingPostgres(t *testing.T) {
+	db := connectToDB(t)
+	defer db.Close()
 
+	store := &PostgresPlayerStore{
+		db,
+	}
 	server := PlayerServer{store: store}
-	response := httptest.NewRecorder()
-	server.ServeHTTP(response, newGetScoreRequest("Alex"))
 
-	got := response.Body.String()
-	want := "5"
+	t.Run("return not existing user score from DB", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		server.ServeHTTP(response, newGetScoreRequest("james"))
+		assertStatus(t, response.Code, http.StatusNotFound)
+	})
 
-	assertStatus(t, response.Code, http.StatusOK)
-	assertResponseBody(t, got, want)
+	t.Run("add new user to DB or increment existing one", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		server.ServeHTTP(response, newPostWinRequest("linux"))
+		got := response.Body.String()
+		want := ""
+		assertStatus(t, response.Code, http.StatusAccepted)
+		assertResponseBody(t, got, want)
+	})
+
+}
+
+//func getPlayerScoreFromDB(t *testing.T, db *sql.DB, name string) (score int) {
+//	t.Helper()
+//	getPlayerQuery := `select score from player_store where name = $1;`
+//	rows, err := db.Query(getPlayerQuery, name)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	defer rows.Close()
+//	for rows.Next() {
+//		err := rows.Scan(&score)
+//		if err != nil {
+//			t.Fatal(err)
+//		}
+//		log.Println(score)
+//	}
+//	err = rows.Err()
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	return score
+//}
+
+// This function returns the DB object on which any subsequent actions are made.
+// Closing of the db connection should be handled outside this function
+func connectToDB(t *testing.T) *sql.DB {
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s port=%d", user, password, dbname, sslmode, port)
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.Ping()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("Successfully connected to the db inside test")
+	return db
 }
 
 func TestGETPlayers(t *testing.T) {
@@ -111,7 +162,7 @@ func TestGETPlayers(t *testing.T) {
 	})
 }
 
-func TestRecordingWinsAndRetrievingThem(t *testing.T){
+func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	store := NewInMemoryPlayerStore()
 	server := PlayerServer{store}
 	player := "Pepper"

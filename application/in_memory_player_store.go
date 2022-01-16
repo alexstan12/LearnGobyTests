@@ -1,9 +1,10 @@
 package main
 
-type InMemoryPlayerStore struct{
+type InMemoryPlayerStore struct {
 	store map[string]int
 }
-func NewInMemoryPlayerStore() *InMemoryPlayerStore{
+
+func NewInMemoryPlayerStore() *InMemoryPlayerStore {
 	return &InMemoryPlayerStore{
 		map[string]int{},
 	}
