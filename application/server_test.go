@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"sync"
 	"testing"
 )
 
@@ -27,6 +29,7 @@ func TestRecordingAndRetrievingPostgres(t *testing.T) {
 
 	store := &PostgresPlayerStore{
 		db,
+		sync.Mutex{},
 	}
 	server := PlayerServer{store: store}
 
@@ -44,30 +47,39 @@ func TestRecordingAndRetrievingPostgres(t *testing.T) {
 		assertStatus(t, response.Code, http.StatusAccepted)
 		assertResponseBody(t, got, want)
 	})
+	t.Run("increment user score in DB with multiple concurrent calls", func(t *testing.T) {
+		wantedCount := 1000
+		var wg sync.WaitGroup
+		var response *httptest.ResponseRecorder
+		wg.Add(wantedCount)
+		for  i:= 0; i< wantedCount ; i++ {
+			go func() {
+				response = httptest.NewRecorder()
+				server.ServeHTTP(response, newPostWinRequest("linux"))
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+		response = httptest.NewRecorder()
+		server.ServeHTTP(response, newGetScoreRequest("linux"))
+		assertResponseBody(t, response.Body.String(),strconv.Itoa(wantedCount))
+	})
 
 }
 
-//func getPlayerScoreFromDB(t *testing.T, db *sql.DB, name string) (score int) {
-//	t.Helper()
-//	getPlayerQuery := `select score from player_store where name = $1;`
-//	rows, err := db.Query(getPlayerQuery, name)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	defer rows.Close()
-//	for rows.Next() {
-//		err := rows.Scan(&score)
-//		if err != nil {
-//			t.Fatal(err)
-//		}
-//		log.Println(score)
-//	}
-//	err = rows.Err()
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	return score
-//}
+func TestLeague(t *testing.T){
+	store := &StubPlayerStore{
+	}
+	server := PlayerServer{store: store}
+	t.Run("it returns 200 on /league", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		request,_ := http.NewRequest(http.MethodGet, "/league", nil)
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusOK)
+	})
+}
+
 
 // This function returns the DB object on which any subsequent actions are made.
 // Closing of the db connection should be handled outside this function

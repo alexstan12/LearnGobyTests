@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
+	"net/http"
 )
 
 const (
@@ -19,7 +20,6 @@ const (
 func main() {
 	//store := NewInMemoryPlayerStore()
 	//server := &PlayerServer{store}
-	//log.Fatal(http.ListenAndServe(":5000", server))
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s port=%d", user, password, dbname, sslmode, port)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -31,4 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Successfully connected to the db")
+	store := PostgresPlayerStore{db: db}
+	server := &PlayerServer{store: &store}
+	log.Fatal(http.ListenAndServe(":5000", server))
 }

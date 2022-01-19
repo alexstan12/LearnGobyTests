@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"sync"
 )
 
 type PostgresPlayerStore struct {
 	//store map[string]int
 	db *sql.DB
+	mu sync.Mutex
 }
 
 func (p *PostgresPlayerStore) GetPlayerScore(name string) int {
@@ -21,6 +23,8 @@ func (p *PostgresPlayerStore) GetPlayerScore(name string) int {
 }
 
 func (p *PostgresPlayerStore) RecordWin(name string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	err := incrementPlayerScoreInDB(p.db, name)
 	if err != nil {
 		fmt.Printf("Could not retrieve player from DB, err:%e", err)
@@ -46,7 +50,7 @@ func incrementPlayerScoreInDB(db *sql.DB, name string) error {
 			return err
 		}
 	} else {
-		score+=1
+		score += 1
 		_, err = updateScoreStmt.Exec(score, name)
 		if err != nil {
 			return err
