@@ -31,7 +31,7 @@ func TestRecordingAndRetrievingPostgres(t *testing.T) {
 		db,
 		sync.Mutex{},
 	}
-	server := PlayerServer{store: store}
+	server := NewPlayerServer(store)
 
 	t.Run("return not existing user score from DB", func(t *testing.T) {
 		response := httptest.NewRecorder()
@@ -70,7 +70,7 @@ func TestRecordingAndRetrievingPostgres(t *testing.T) {
 func TestLeague(t *testing.T){
 	store := &StubPlayerStore{
 	}
-	server := PlayerServer{store: store}
+	server := NewPlayerServer(store)
 	t.Run("it returns 200 on /league", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		request,_ := http.NewRequest(http.MethodGet, "/league", nil)
@@ -105,9 +105,7 @@ func TestGETPlayers(t *testing.T) {
 		},
 		winCalls: nil,
 	}
-	server := &PlayerServer{
-		store: &store,
-	}
+	server := NewPlayerServer(&store)
 
 	t.Run("return Pepper's score", func(t *testing.T) {
 		request := newGetScoreRequest("Pepper")
@@ -176,7 +174,7 @@ func TestGETPlayers(t *testing.T) {
 
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 	store := NewInMemoryPlayerStore()
-	server := PlayerServer{store}
+	server := NewPlayerServer(store)
 	player := "Pepper"
 
 	server.ServeHTTP(httptest.NewRecorder(), newPostWinRequest(player))
