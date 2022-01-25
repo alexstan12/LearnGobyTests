@@ -2,9 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
@@ -13,6 +17,11 @@ import (
 type StubPlayerStore struct {
 	scores   map[string]int
 	winCalls []string
+	league []Player
+}
+
+func (s *StubPlayerStore) GetLeague() []Player{
+	return s.league
 }
 
 func (s *StubPlayerStore) GetPlayerScore(name string) int {
@@ -70,16 +79,60 @@ func TestRecordingAndRetrievingPostgres(t *testing.T) {
 func TestLeague(t *testing.T){
 	store := &StubPlayerStore{
 	}
+	log.Printf("The current number of allocated logical CPUs are %d", runtime.NumCPU())
 	server := NewPlayerServer(store)
 	t.Run("it returns 200 on /league", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		request,_ := http.NewRequest(http.MethodGet, "/league", nil)
+
 		server.ServeHTTP(response, request)
 
+		var got []Player
+		err:= json.NewDecoder(response.Body).Decode(&got)
+		if err != nil {
+			t.Fatalf("Unable to parse response from server %q into slice of Player, '%v'", response.Body, err)
+		}
 		assertStatus(t, response.Code, http.StatusOK)
+	})
+
+	t.Run("it returns the table league as JSON", func(t *testing.T){
+		wantedLeague := []Player{
+			{"Cleo", 32},
+			{"Chris", 20},
+			{"Tiest", 14},
+		}
+		store.league = wantedLeague
+
+		request := newLeagueRequest()
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		got := getLeagueFromResponse(t, response)
+		assertStatus(t, response.Code, http.StatusOK)
+		assertLeague(t, got, wantedLeague)
+		assertContentType(t, response, jsonContentType)
 	})
 }
 
+func assertContentType(t *testing.T, response *httptest.ResponseRecorder, want string) {
+	if response.Result().Header.Get("content-type") != want {
+		t.Errorf("response did not have content-type of application/json, got %v", response.Result().Header)
+	}
+}
+
+func newLeagueRequest() *http.Request {
+	request, _ := http.NewRequest(http.MethodGet, "/league", nil)
+	return request
+}
+
+func getLeagueFromResponse(t *testing.T, response *httptest.ResponseRecorder) (league []Player) {
+	err := json.NewDecoder(response.Body).Decode(&league)
+	if err != nil {
+		t.Fatalf("Unable to parse response from server %q into slice of Player, '%v'", response.Body, err)
+	}
+	return league
+}
 
 // This function returns the DB object on which any subsequent actions are made.
 // Closing of the db connection should be handled outside this function
@@ -202,6 +255,13 @@ func assertStatus(t *testing.T, got int, want int) {
 	t.Helper()
 	if got != want {
 		t.Errorf("response code is wrong, got %d, want %d", got, want)
+	}
+}
+
+func assertLeague(t *testing.T, got []Player, wantedLeague []Player) {
+	t.Helper()
+	if !reflect.DeepEqual(got, wantedLeague) {
+		t.Errorf("got %v want %v", got, wantedLeague)
 	}
 }
 

@@ -13,6 +13,10 @@ type PostgresPlayerStore struct {
 	mu sync.Mutex
 }
 
+func (p *PostgresPlayerStore) GetLeague() []Player {
+	return nil
+}
+
 func (p *PostgresPlayerStore) GetPlayerScore(name string) int {
 	score, err := getPlayerScoreFromDB(p.db, name)
 	if err != nil {

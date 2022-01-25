@@ -1,20 +1,29 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 )
 
+type Player struct {
+	Name string
+	Wins int
+}
+
 type PlayerStore interface {
 	GetPlayerScore(name string) int
 	RecordWin(name string)
+	GetLeague() []Player
 }
 
 type PlayerServer struct {
 	store PlayerStore
 	http.Handler
 }
+
+const jsonContentType = "application/json"
 
 func NewPlayerServer(store PlayerStore) *PlayerServer{
 	p := new(PlayerServer)
@@ -28,9 +37,12 @@ func NewPlayerServer(store PlayerStore) *PlayerServer{
 	return p
 }
 
-func (p *PlayerServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	p.Handler.ServeHTTP(writer, request)
-}
+// this is no longer needed due to the embedding of the handler interface in the
+// PlayerServer type, operation that promotes the method ServeHTTP to the level
+// of PlayerServers structure
+//func (p *PlayerServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+//	p.Handler.ServeHTTP(writer, request)
+//}
 
 func (p *PlayerServer) playersHandler(writer http.ResponseWriter, request *http.Request){
 		player := strings.TrimPrefix(request.URL.Path, "/players/")
@@ -44,8 +56,17 @@ func (p *PlayerServer) playersHandler(writer http.ResponseWriter, request *http.
 }
 
 func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+	//leagueTable := p.getLeagueTable()
+	w.Header().Set("content-type", jsonContentType)
+	json.NewEncoder(w).Encode(p.store.GetLeague())
 
+}
+
+func (p *PlayerServer) getLeagueTable() []Player {
+	leagueTable := []Player{
+		{"Chris", 20},
+	}
+	return leagueTable
 }
 
 func (p *PlayerServer) showScore(writer http.ResponseWriter, player string) {

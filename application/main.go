@@ -32,6 +32,6 @@ func main() {
 	}
 	fmt.Println("Successfully connected to the db")
 	store := PostgresPlayerStore{db: db}
-	server := &PlayerServer{store: &store}
+	server := NewPlayerServer(&store)
 	log.Fatal(http.ListenAndServe(":5000", server))
 }
