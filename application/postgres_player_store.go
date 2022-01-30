@@ -14,8 +14,14 @@ type PostgresPlayerStore struct {
 }
 
 func (p *PostgresPlayerStore) GetLeague() []Player {
-	return nil
+	var league []Player
+	league, err := getLeagueFromDB(p.db)
+	if err != nil {
+		fmt.Printf("could not retrieve league from DB, err: %e", err)
+	}
+	return league
 }
+
 
 func (p *PostgresPlayerStore) GetPlayerScore(name string) int {
 	score, err := getPlayerScoreFromDB(p.db, name)
@@ -82,4 +88,30 @@ func getPlayerScoreFromDB(db *sql.DB, name string) (score int, err error) {
 		return 0, err
 	}
 	return score, nil
+}
+
+func getLeagueFromDB(db *sql.DB) ([]Player, error) {
+	getLeagueQuery := `select name, score from player_store order by score asc;`
+	rows, err := db.Query(getLeagueQuery)
+	if err != nil {
+		return []Player{}, err
+	}
+	defer rows.Close()
+	var league []Player
+	for rows.Next() {
+		var name string
+		var wins int
+		err := rows.Scan(&name, &wins)
+		if err != nil {
+			return []Player{}, err
+		}
+		player := Player{name, wins}
+		log.Println(player)
+		league = append(league, player)
+	}
+	err = rows.Err()
+	if err != nil {
+		return []Player{}, err
+	}
+	return league, nil
 }
