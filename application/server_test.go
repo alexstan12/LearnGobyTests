@@ -17,10 +17,10 @@ import (
 type StubPlayerStore struct {
 	scores   map[string]int
 	winCalls []string
-	league []Player
+	league   []Player
 }
 
-func (s *StubPlayerStore) GetLeague() []Player{
+func (s *StubPlayerStore) GetLeague() []Player {
 	return s.league
 }
 
@@ -61,7 +61,7 @@ func TestRecordingAndRetrievingPostgres(t *testing.T) {
 		var wg sync.WaitGroup
 		var response *httptest.ResponseRecorder
 		wg.Add(wantedCount)
-		for  i:= 0; i< wantedCount ; i++ {
+		for i := 0; i < wantedCount; i++ {
 			go func() {
 				response = httptest.NewRecorder()
 				server.ServeHTTP(response, newPostWinRequest("linux"))
@@ -71,31 +71,30 @@ func TestRecordingAndRetrievingPostgres(t *testing.T) {
 		wg.Wait()
 		response = httptest.NewRecorder()
 		server.ServeHTTP(response, newGetScoreRequest("linux"))
-		assertResponseBody(t, response.Body.String(),strconv.Itoa(wantedCount))
+		assertResponseBody(t, response.Body.String(), strconv.Itoa(wantedCount))
 	})
 
 }
 
-func TestLeague(t *testing.T){
-	store := &StubPlayerStore{
-	}
+func TestLeague(t *testing.T) {
+	store := &StubPlayerStore{}
 	log.Printf("The current number of allocated logical CPUs are %d", runtime.NumCPU())
 	server := NewPlayerServer(store)
 	t.Run("it returns 200 on /league", func(t *testing.T) {
 		response := httptest.NewRecorder()
-		request,_ := http.NewRequest(http.MethodGet, "/league", nil)
+		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
 
 		server.ServeHTTP(response, request)
 
 		var got []Player
-		err:= json.NewDecoder(response.Body).Decode(&got)
+		err := json.NewDecoder(response.Body).Decode(&got)
 		if err != nil {
 			t.Fatalf("Unable to parse response from server %q into slice of Player, '%v'", response.Body, err)
 		}
 		assertStatus(t, response.Code, http.StatusOK)
 	})
 
-	t.Run("it returns the table league as JSON", func(t *testing.T){
+	t.Run("it returns the table league as JSON", func(t *testing.T) {
 		wantedLeague := []Player{
 			{"Cleo", 32},
 			{"Chris", 20},

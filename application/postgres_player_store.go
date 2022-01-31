@@ -22,7 +22,6 @@ func (p *PostgresPlayerStore) GetLeague() []Player {
 	return league
 }
 
-
 func (p *PostgresPlayerStore) GetPlayerScore(name string) int {
 	score, err := getPlayerScoreFromDB(p.db, name)
 	if err != nil {
